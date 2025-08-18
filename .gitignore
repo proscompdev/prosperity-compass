@@ -1,0 +1,23 @@
+# OS junk
+.DS_Store
+
+# Node / Monorepo
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env & secrets
+.env
+.env.*.local
+
+# Next.js
+.next/
+out/
+.next.cache/
+
+# Build outputs
+dist/
+build/
+coverage/
