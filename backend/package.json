@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit false",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "seed": "prisma db seed",
+    "reset:seed": "tsx scripts/reset-seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,11 +24,15 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.3.0",
     "prisma": "^6.14.0",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
