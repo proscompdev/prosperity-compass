@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -7,6 +8,7 @@ import { hashPassword, verifyPassword, signToken, verifyToken } from "./auth";
 import { Prisma } from "@prisma/client";
 
 const app = express();
+app.use(express.json()); // required for JSON body parsing
 
 // tiny request logger
 app.use((req, _res, next) => {
@@ -14,12 +16,27 @@ app.use((req, _res, next) => {
   next();
 });
 
-// CORS for Next dev
+// CORS for Next dev + prod
+const origins = new Set<string>([
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+]);
+
+// Allow extra origins from env (comma-separated)
+if (process.env.CORS_ORIGINS) {
+  process.env.CORS_ORIGINS.split(",").forEach(o => {
+    const x = o.trim();
+    if (x) origins.add(x);
+  });
+}
+
 app.use(cors({
-  origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+  origin: Array.from(origins),
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+
 
 app.use(express.json());
 
@@ -212,6 +229,35 @@ app.post("/transactions", requireAuth, async (req, res) => {
     },
   });
   res.status(201).json(tx);
+});
+// ---------- AI Chat ----------
+const ai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const ChatBody = z.object({
+  message: z.string().min(1, 'message required').max(2000),
+});
+
+// POST /ai/chat  { message } -> { reply }
+app.post('/ai/chat', async (req, res) => {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'AI not configured' });
+    }
+    const { message } = ChatBody.parse(req.body);
+
+    const response = await ai.responses.create({
+      model: 'gpt-4o-mini',
+      instructions:
+        'You are Prosperity Compass, a supportive financial mentor. Keep answers short, clear, and action-oriented.',
+      input: message,
+    });
+
+    const reply = (response as any).output_text ?? '';
+    return res.json({ reply });
+  } catch (err: any) {
+    console.error('AI error:', err);
+    return res.status(400).json({ error: err?.message || 'AI failure' });
+  }
 });
 
 const PORT = Number(process.env.PORT) || 4000;
